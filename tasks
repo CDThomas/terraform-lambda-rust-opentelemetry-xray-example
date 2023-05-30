@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+set -e # exit when a command fails
+set -u # exit when script tries to use undeclared variables
+if [[ -n "${DEBUG_TASKS:-}" ]]; then
+  set -x # trace what gets executed (useful for debugging)
+fi
+
+setup() {
+  # Install all the asdf dependencies
+  set +e
+  plugins=$(cut -d ' ' -f 1 .tool-versions | sort -u)
+  for p in $plugins; do
+    asdf plugin add "$p"
+    retval=$?
+    if [ $retval != 0 ] && [ $retval != 2 ]; then
+      echo "Problem when installing asdf plugin $p"
+      exit 3
+    fi
+  done
+  set -e
+  asdf install
+  asdf reshim
+}
+
+subcommand="${1:-setup}"
+
+case $subcommand in
+  setup)
+    setup
+    ;;
+
+  *)
+    echo "Unknown task"
+    exit 1
+    ;;
+esac
